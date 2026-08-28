@@ -97,9 +97,11 @@ Agents communicate through a centralized event system:
 - **Audio settings**: Volume and sound preferences
 
 ### Time Machine Integration
-- **Auto-detection**: System automatically detects running backups
-- **Graceful shutdown**: 30-second timeout before force stop
-- **State verification**: Confirms backup completion
+- **Auto-detection**: System automatically detects running backups via `tmutil status`.
+- **Graceful interrupt**: Issues `tmutil stopbackup` and waits up to 15 seconds for the backup to park.
+- **Wired Time Machine exception**: A wired backup in progress does not block ejection. If `backupd` dissents the unmount after being interrupted, the daemon escalates with `diskutil unmountDisk force` on that disk, then re-attempts ejection. Rationale: wired backup disks are physically present and the user asked for them to leave; Time Machine discards the incomplete backup set on next mount.
+- **Non-TM transfers stay protected**: dissenters other than `backupd` (rsync, mds, apps) are never force-unmounted — the knock plays the refusal sound instead.
+- **State verification**: Confirms backup completion before normal ejection.
 
 ## Performance Characteristics
 

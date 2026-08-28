@@ -8,12 +8,12 @@ Knock **three times** on an Apple-silicon MacBook and Eject Different safely eje
 
 - Reads the MacBook's hidden Apple SPU IMU (accelerometer **and gyroscope**) through IOKit HID.
 - Ignores single knocks, double knocks, and mechanical bounce.
-- On a triple knock, checks Time Machine first.
-- If a backup is running, asks `tmutil` to stop it and waits until it is stopped.
+- On a triple knock, **automatically detects and stops any active Time Machine backups** before proceeding with disk ejection.
+- **Wired Time Machine exception:** a backup in progress to a wired destination never blocks the knock — if `backupd` still holds the disk after being interrupted, Eject Different force-unmounts that wired backup disk anyway. Other busy disks (an rsync, an app transfer) are still politely refused.
 - Uses `diskutil eject` on each external physical disk. It never force-unmounts a busy volume.
 - Plays an original C-major add-9 success chord. On refusal/failure, it plays macOS's built-in **Sosumi** sound.
 - Temporarily unmutes and sets output to 100% for feedback, then restores the exact prior mute and volume settings.
-- Runs as a root LaunchDaemon (required for SPU HID access) and disables system sleep so it keeps listening with the lid open or closed.
+- Runs as a root LaunchDaemon (required for SPU HID access) and **disables system sleep so it keeps listening with the lid open or closed**.
 
 ## Requirements
 

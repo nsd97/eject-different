@@ -46,6 +46,26 @@ final class GyroscopeKnockTests: XCTestCase {
     }
 }
 
+final class TimeMachinePolicyTests: XCTestCase {
+    func testBackupdDissentIsForceEligible() {
+        let output = "Unmount was dissented by PID 123 (/System/Library/CoreServices/backupd.bundle/Contents/Resources/backupd)"
+        XCTAssertTrue(TimeMachinePolicy.forceEjectEligible(failureOutput: output))
+    }
+
+    func testOrdinaryBusyProcessIsNotForceEligible() {
+        let output = "Unmount was dissented by PID 98343 (/opt/homebrew/Cellar/rsync/3.4.4/bin/rsync)"
+        XCTAssertFalse(TimeMachinePolicy.forceEjectEligible(failureOutput: output))
+    }
+
+    func testBackupdMatchIsCaseInsensitive() {
+        XCTAssertTrue(TimeMachinePolicy.forceEjectEligible(failureOutput: "DISSENTED BY PID 7 (BACKUPD)"))
+    }
+
+    func testEmptyFailureIsNotForceEligible() {
+        XCTAssertFalse(TimeMachinePolicy.forceEjectEligible(failureOutput: ""))
+    }
+}
+
 final class EjectionPlanTests: XCTestCase {
     func testTimeMachineStopAlwaysPrecedesDiskEjection() {
         let plan = EjectionPlan.make(timeMachineRunning: true, wholeDisks: ["disk4", "disk7"])
