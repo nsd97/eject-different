@@ -13,7 +13,7 @@ Knock **three times** on an Apple-silicon MacBook and Eject Different safely eje
 - Uses `diskutil eject` on each external physical disk. It never force-unmounts a busy volume.
 - Plays an original C-major add-9 success chord. On refusal/failure, it plays macOS's built-in **Sosumi** sound.
 - Temporarily unmutes and sets output to 100% for feedback, then restores the exact prior mute and volume settings.
-- Runs as a root LaunchDaemon (required for SPU HID access) and **disables system sleep so it keeps listening with the lid open or closed**.
+- Runs as a root LaunchDaemon (required for SPU HID access) and **stays awake with the lid open or closed only while plugged into AC**. On battery the Mac sleeps normally, and the display is allowed to sleep in both cases.
 
 ## Requirements
 
@@ -42,7 +42,7 @@ Uninstall and restore normal sleep:
 sudo Scripts/uninstall.sh
 ```
 
-> **Power note:** closed-lid listening requires the machine not to sleep. The installer applies `pmset -a sleep 0 disablesleep 1`, including on battery. Uninstall restores `sleep 1` and clears `disablesleep`.
+> **Power note:** closed-lid listening requires the machine not to sleep. The installer applies `pmset -c sleep 0 disablesleep 1` (AC only), so the Mac stays awake with the lid closed **only while plugged in**; on battery it sleeps normally (`pmset -b sleep 1 disablesleep 0`). The display is always allowed to sleep (`displaysleep 10`). Uninstall restores the stock sleep policy.
 
 ## Design
 

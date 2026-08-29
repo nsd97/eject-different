@@ -65,7 +65,8 @@ Eject Different operates as an autonomous agent system that continuously monitor
 - Resource monitoring and cleanup
 
 **Key Behaviors**:
-- Persistent operation with closed-lid support
+- Persistent operation: **always-on with closed lid only while on AC power**; on battery the system sleeps normally
+- **Display sleep is always permitted** — only system sleep is suppressed, and only on AC
 - Comprehensive logging for debugging
 - Graceful error recovery and restarts
 - System resource management

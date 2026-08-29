@@ -32,8 +32,12 @@ chmod 644 /Library/LaunchDaemons/com.nsd97.eject-different.plist
 chown root:wheel /Library/LaunchDaemons/com.nsd97.eject-different.plist
 plutil -lint /Library/LaunchDaemons/com.nsd97.eject-different.plist
 
-# Closed-lid operation: intentionally keep this Mac awake on AC and battery.
-pmset -a sleep 0 disablesleep 1
+# Closed-lid operation: keep this Mac awake ONLY when plugged in (AC).
+# On battery, the Mac is allowed to sleep normally so the battery is
+# preserved. The display is always allowed to sleep.
+pmset -a displaysleep 10
+pmset -c sleep 0 disablesleep 1          # AC power: stay awake, lid open or closed
+pmset -b sleep 1 disablesleep 0          # Battery: sleep normally like any Mac
 
 launchctl unload /Library/LaunchDaemons/com.nsd97.eject-different.plist 2>/dev/null || true
 launchctl load -w /Library/LaunchDaemons/com.nsd97.eject-different.plist
