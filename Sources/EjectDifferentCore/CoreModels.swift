@@ -52,4 +52,15 @@ public enum DiskutilParser {
         }
         return disks
     }
+
+    /// True when `diskutil info` marks the disk removable (USB/TB drives and
+    /// SD cards in the built-in reader) or external. The internal SSD reports
+    /// neither, so it is never ejectable.
+    public static func isEjectable(from data: Data) throws -> Bool {
+        let plist = try PropertyListSerialization.propertyList(from: data, options: [], format: nil)
+        guard let dictionary = plist as? [String: Any] else { return false }
+        if dictionary["RemovableMediaOrExternalDevice"] as? Bool == true { return true }
+        if dictionary["External"] as? Bool == true { return true }
+        return false
+    }
 }

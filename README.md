@@ -2,7 +2,7 @@
 
 > Think Different. Eject Different.
 
-Knock **three times** on an Apple-silicon MacBook and Eject Different safely ejects every external physical disk. No clicking. No menu hunting. No touching the volume control.
+Knock **three times** on an Apple-silicon MacBook and Eject Different safely ejects every removable physical disk — external drives **and SD cards**. No clicking. No menu hunting. No touching the volume control.
 
 ## What it does
 
@@ -10,7 +10,7 @@ Knock **three times** on an Apple-silicon MacBook and Eject Different safely eje
 - Ignores single knocks, double knocks, and mechanical bounce.
 - On a triple knock, **automatically detects and stops any active Time Machine backups** before proceeding with disk ejection.
 - **Wired Time Machine exception:** a backup in progress to a wired destination never blocks the knock — if `backupd` still holds the disk after being interrupted, Eject Different force-unmounts that wired backup disk anyway. Other busy disks (an rsync, an app transfer) are still politely refused.
-- Uses `diskutil eject` on each external physical disk. It never force-unmounts a busy volume.
+- Uses `diskutil eject` on every removable physical disk — external USB/Thunderbolt drives **and SD cards in the built-in reader**. The internal boot disk is never touched. It never force-unmounts a busy volume.
 - Plays an original C-major add-9 success chord. On refusal/failure, it plays macOS's built-in **Sosumi** sound.
 - Temporarily unmutes and sets output to 100% for feedback, then restores the exact prior mute and volume settings.
 - Runs as a root LaunchDaemon (required for SPU HID access) and **stays awake with the lid open or closed only while plugged into AC**. On battery the Mac sleeps normally, and the display is allowed to sleep in both cases.

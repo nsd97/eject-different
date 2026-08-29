@@ -71,6 +71,11 @@ if CommandLine.arguments.contains("--probe") {
 
 if CommandLine.arguments.contains("--sound-test-success") { Feedback.success(); exit(0) }
 if CommandLine.arguments.contains("--sound-test-failure") { Feedback.failure(); exit(0) }
+if CommandLine.arguments.contains("--list-targets") {
+    let disks = SafeEjector.ejectableWholeDisks()
+    print(disks.isEmpty ? "none" : disks.joined(separator: "\n"))
+    exit(0)
+}
 
 let sensor = SPUAccelerometerService()
 let detector = TripleKnockDetector()

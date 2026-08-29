@@ -92,4 +92,28 @@ final class DiskutilParserTests: XCTestCase {
         """.data(using: .utf8)!
         XCTAssertEqual(try DiskutilParser.wholeDisks(from: plist), ["disk10"])
     }
+
+    private func infoPlist(removable: Bool?, external: Bool?) -> Data {
+        var dict: [String: Any] = [:]
+        if let removable { dict["RemovableMediaOrExternalDevice"] = removable }
+        if let external { dict["External"] = external }
+        return try! PropertyListSerialization.data(fromPropertyList: dict, format: .xml, options: 0)
+    }
+
+    func testRemovableMediaIsEjectable() throws {
+        // Internal SD card in the built-in reader reports removable.
+        XCTAssertTrue(try DiskutilParser.isEjectable(from: infoPlist(removable: true, external: false)))
+    }
+
+    func testInternalSSDIsNotEjectable() throws {
+        XCTAssertFalse(try DiskutilParser.isEjectable(from: infoPlist(removable: false, external: false)))
+    }
+
+    func testExternalFlagFallbackIsEjectable() throws {
+        XCTAssertTrue(try DiskutilParser.isEjectable(from: infoPlist(removable: nil, external: true)))
+    }
+
+    func testMissingFlagsAreNotEjectable() throws {
+        XCTAssertFalse(try DiskutilParser.isEjectable(from: infoPlist(removable: nil, external: nil)))
+    }
 }

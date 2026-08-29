@@ -39,12 +39,30 @@ public enum TimeMachinePolicy {
 }
 
 public enum SafeEjector {
+    /// Every physical whole disk marked removable or external — external USB
+    /// and Thunderbolt drives plus SD cards in the built-in reader. Never the
+    /// internal boot disk.
+    public static func ejectableWholeDisks() -> [String] {
+        do {
+            let listing = try Shell.run("/usr/sbin/diskutil", ["list", "-plist", "physical"])
+            guard listing.status == 0 else { return [] }
+            let candidates = try DiskutilParser.wholeDisks(from: listing.output)
+            return candidates.filter { candidate in
+                guard let info = try? Shell.run("/usr/sbin/diskutil", ["info", "-plist", candidate]),
+                      info.status == 0,
+                      let ejectable = try? DiskutilParser.isEjectable(from: info.output)
+                else { return false }
+                return ejectable
+            }
+        } catch {
+            return []
+        }
+    }
+
     public static func ejectAllExternal() -> EjectionReport {
         do {
-            let listing = try Shell.run("/usr/sbin/diskutil", ["list", "-plist", "external", "physical"])
-            guard listing.status == 0 else { return EjectionReport(ejected: [], failures: [listing.text], interruptedTimeMachine: false) }
-            let disks = try DiskutilParser.wholeDisks(from: listing.output)
-            guard !disks.isEmpty else { return EjectionReport(ejected: [], failures: ["No external physical disks are mounted"], interruptedTimeMachine: false) }
+            let disks = ejectableWholeDisks()
+            guard !disks.isEmpty else { return EjectionReport(ejected: [], failures: ["No ejectable media (external drives or SD cards) is mounted"], interruptedTimeMachine: false) }
 
             let status = try Shell.run("/usr/bin/tmutil", ["status"])
             let tmRunning = status.text.contains("Running = 1")

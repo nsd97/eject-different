@@ -52,8 +52,9 @@ Eject Different operates as an autonomous agent system that continuously monitor
 **Key Behaviors**:
 - Intelligent state management with `LockedBox`
 - Time Machine detection and graceful shutdown
-- Safe disk mounting verification before ejection
-- Audio level management for user feedback
+- **Disk targeting**: Enumerates all physical whole disks via `diskutil list -plist physical`, then keeps only those `diskutil info` marks `RemovableMediaOrExternalDevice` — external USB/Thunderbolt drives plus SD cards in the built-in reader. The internal SSD is never ejectable.
+- **Safe ejection**: Uses `diskutil eject`; never force-unmounts except under the wired Time Machine exception.
+- **Audio feedback**: Original C-major add-9 chord on success, macOS Sosumi on refusal, with temporary mute/volume override and exact restoration.
 - Robust error handling with fallback mechanisms
 
 ### 4. System Infrastructure Agents
