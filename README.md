@@ -18,6 +18,7 @@ Knock **three times** on an Apple-silicon MacBook and Eject Different safely eje
 ## Requirements
 
 - Apple Silicon MacBook with `AppleSPUHIDDevice` (M2/M3/M4/M5; select M1 Pro hardware may work)
+- **Not Mac Studio or Mac mini** — those boards ship no SPU IMU (verified against an M1 Max and M2 Max Studio: no `0xFF00` accel/gyro HID nodes).
 - macOS 15+
 - Xcode command-line tools / Swift 6 to build
 
