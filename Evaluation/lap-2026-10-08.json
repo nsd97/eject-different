@@ -1,0 +1,81 @@
+{
+  "scenario": "lap",
+  "mac": "Mac14,6",
+  "macOS": "27.0",
+  "sampleSpacing": 0.0012545,
+  "split": "tuning",
+  "segments": [
+    {
+      "label": "Sit normally, hands off the Mac.",
+      "expect": "none",
+      "start": 0,
+      "end": 4385
+    },
+    {
+      "label": "Knock three times, wherever and however you'd naturally knock to eject.",
+      "expect": "triple",
+      "start": 4385,
+      "end": 9169
+    },
+    {
+      "label": "Again: knock three times.",
+      "expect": "triple",
+      "start": 9169,
+      "end": 13952
+    },
+    {
+      "label": "Once more: knock three times.",
+      "expect": "triple",
+      "start": 13952,
+      "end": 18735
+    },
+    {
+      "label": "Knock once.",
+      "expect": "single",
+      "start": 18735,
+      "end": 21924
+    },
+    {
+      "label": "Knock once.",
+      "expect": "single",
+      "start": 21924,
+      "end": 25112
+    },
+    {
+      "label": "Knock once.",
+      "expect": "single",
+      "start": 25112,
+      "end": 28301
+    },
+    {
+      "label": "Type anything, at your normal speed.",
+      "expect": "none",
+      "start": 28301,
+      "end": 36273
+    },
+    {
+      "label": "Click the trackpad a few times.",
+      "expect": "none",
+      "start": 36273,
+      "end": 41057
+    },
+    {
+      "label": "Shift in your seat, or move your legs.",
+      "expect": "none",
+      "start": 41057,
+      "end": 45840
+    },
+    {
+      "label": "Again: shift around, like you would while working.",
+      "expect": "none",
+      "start": 45840,
+      "end": 50623
+    },
+    {
+      "label": "Close the lid halfway, then open it again.",
+      "expect": "none",
+      "start": 50623,
+      "end": 57001
+    }
+  ]
+}

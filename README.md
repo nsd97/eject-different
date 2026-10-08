@@ -2,65 +2,86 @@
 
 > Think Different. Eject Different.
 
-Knock **three times** on an Apple-silicon MacBook and Eject Different safely ejects every removable physical disk — external drives **and SD cards**. No clicking. No menu hunting. No touching the volume control.
-
-## What it does
-
-- Reads the MacBook's hidden Apple SPU IMU (accelerometer **and gyroscope**) through IOKit HID.
-- Ignores single knocks, double knocks, and mechanical bounce.
-- On a triple knock, **automatically detects and stops any active Time Machine backups** before proceeding with disk ejection.
-- **Wired Time Machine exception:** a backup in progress to a wired destination never blocks the knock — if `backupd` still holds the disk after being interrupted, Eject Different force-unmounts that wired backup disk anyway. Other busy disks (an rsync, an app transfer) are still politely refused.
-- Uses `diskutil eject` on every removable physical disk — external USB/Thunderbolt drives **and SD cards in the built-in reader**. The internal boot disk is never touched. It never force-unmounts a busy volume.
-- Plays an original C-major add-9 success chord. On refusal/failure, it plays macOS's built-in **Sosumi** sound.
-- Temporarily unmutes and sets output to 100% for feedback, then restores the exact prior mute and volume settings.
-- Runs as a root LaunchDaemon (required for SPU HID access) and **stays awake with the lid open or closed only while plugged into AC**. On battery the Mac sleeps normally, and the display is allowed to sleep in both cases.
-
-## Requirements
-
-- Apple Silicon MacBook with `AppleSPUHIDDevice` (M2/M3/M4/M5; select M1 Pro hardware may work)
-- **Not Mac Studio or Mac mini** — those boards ship no SPU IMU (verified against an M1 Max and M2 Max Studio: no `0xFF00` accel/gyro HID nodes).
-- macOS 15+
-- Xcode command-line tools / Swift 6 to build
+Knock three times on your MacBook and every external drive and SD card ejects, unless it's in use. A chord means it's safe to unplug. Sosumi means a disk is still in use, so it stays put.
 
 ## Install
 
+1. Move **Eject Different** to your Applications folder and open it.
+2. Click **Turn On**.
+3. Click **Open System Settings** and allow Eject Different under General › Login Items & Extensions.
+
+macOS asks for approval because the listener runs as root. Root is the only way macOS lets an app read this sensor. Close the window whenever you like: the listener keeps running and starts again with your Mac.
+
+To build it yourself, open `EjectDifferent.xcodeproj` in Xcode 27 or later, choose your team under Signing & Capabilities, then choose Product › Archive.
+
+## What a knock does
+
+- **Ejects** USB and Thunderbolt drives, and SD cards in the built-in reader.
+- **Never touches** the internal disk, disk images (including Xcode's simulator runtimes), or network shares.
+- **Skips any disk that's in use** and plays Sosumi, so you know to wait. The exception is Time Machine. If a backup is holding the drive, Eject Different stops the backup and ejects the drive anyway. Time Machine discards the unfinished backup and starts fresh next time.
+- **Plays loud enough to hear.** While the chime plays, your Mac is unmuted and the built-in speakers go to full volume. Then your volume and mute go back exactly as they were. Headphones and AirPods play the chime at your current volume.
+
+## Sleep
+
+While plugged in, your Mac stays awake so it can hear you, even with the lid closed. On battery it sleeps as it always has. When it ejects, it briefly wakes the Mac — and the screen, if the lid is open — so you can hear the chime even through a closed lid, then it goes back to sleep on its own. Your Energy settings are never changed.
+
+## Requirements
+
+- A MacBook with Apple silicon. Mac mini and Mac Studio have no motion sensor, and the app says so.
+- macOS 15 or later.
+
+## Troubleshooting
+
+Watch it listen and eject:
+
 ```bash
-git clone https://github.com/nsd97/eject-different.git
-cd eject-different
-sudo Scripts/install.sh
+log stream --predicate 'subsystem == "com.nsd97.EjectDifferent"'
 ```
 
-Verify:
+Every knock appears with its number and how hard it landed, such as `Knock 2: peak 0.072 g`. An impact that didn't count says why.
+
+See what a knock would eject, without ejecting anything:
 
 ```bash
-sudo /usr/local/libexec/eject-different/eject-different --probe
-sudo launchctl print system/com.nsd97.eject-different
+"/Applications/Eject Different.app/Contents/MacOS/Eject Different" --list
 ```
 
-Uninstall and restore normal sleep:
+## Uninstall
+
+Open Eject Different, click **Turn Off**, and drag it to the Trash.
+
+## Upgrading from the script install
+
+Before the app, Eject Different was a command-line daemon installed with `sudo Scripts/install.sh`. Remove that version first:
 
 ```bash
-sudo Scripts/uninstall.sh
+sudo launchctl bootout system/com.nsd97.eject-different
+sudo rm -rf /Library/LaunchDaemons/com.nsd97.eject-different.plist /usr/local/libexec/eject-different
+sudo pmset -a disablesleep 0
 ```
 
-> **Power note:** closed-lid listening requires the machine not to sleep. The installer applies `pmset -c sleep 0 disablesleep 1` (AC only), so the Mac stays awake with the lid closed **only while plugged in**; on battery it sleeps normally (`pmset -b sleep 1 disablesleep 0`). The display is always allowed to sleep (`displaysleep 10`). Uninstall restores the stock sleep policy.
+The old installer also set display sleep to 10 minutes. If you want your old setting back, change it in System Settings › Lock Screen.
 
-## Design
+## How it works
 
-The sensor is a Bosch BMI286-class IMU behind Apple's Sensor Processing Unit. Accelerometer reports use vendor usage page `0xFF00`, usage `3`, and gyroscope reports use usage `9`; each 22-byte report carries Q16 xyz values. A low-pass/high-pass acceleration filter is fused with rotational gyroscope impulses. A 400 ms grouping window recognizes exactly three knocks.
+Inside every Apple silicon MacBook is a Bosch motion sensor behind Apple's Sensor Processing Unit. There's no public API for it. macOS exposes its accelerometer as a vendor HID device, and the listener wakes it and reads 800 reports a second.
 
-The sound recording in this repository is original and generated by `Scripts/generate-success-chord.py`; no Apple startup audio is redistributed.
+A Mac on a lap is never still, but that motion is slow. A knuckle on aluminum is fast: its energy sits between about 15 and 80 Hz. So the listener ignores everything below 40 Hz and listens for impacts above it. Typing, trackpad clicks, and moving the lid all stay well under the weakest knock. Three knocks about a third of a second apart make a triple, and the Mac answers the instant the third lands. One or two knocks do nothing, and neither does shifting in your seat, even when it lands harder than a knock.
+
+The thresholds were measured with the Mac on a lap. That recording and every labeled one since live in `Evaluation/`, and the tests score the detector against all of them: each triple heard exactly once, and nothing else ever. Debug builds add a live chart of what the detector hears, and a recorder for new sessions on a lap, on a desk, on the move, or through a day of ordinary use. AGENTS.md explains how the recordings are used.
+
+Ejecting uses the same calls Finder does. Each disk is asked to eject. If it refuses, macOS names the process holding it, and that is how Time Machine is told apart from everything else.
+
+The chord is original, generated by `Scripts/generate-success-chord.py`. No Apple startup sound is redistributed.
 
 ## Credits
 
-Eject Different stands on excellent MIT-licensed reverse engineering:
+Eject Different stands on MIT-licensed reverse engineering:
 
-- [`shaircast/nocnoc`](https://github.com/shaircast/nocnoc) — Swift SPU HID access and knock-pattern filtering, adapted in `SPUAccelerometerService.swift` and `KnockDetector.swift`.
-- [`olvvier/apple-silicon-accelerometer`](https://github.com/olvvier/apple-silicon-accelerometer) — SPU/BMI286 report layout, usages, Q16 scaling, and driver wake properties.
-- [`taigrr/spank`](https://github.com/taigrr/spank) — prior art proving a root LaunchDaemon can continuously monitor this sensor and produce audio feedback.
-
-Thank you to those authors for opening the door.
+- [`shaircast/nocnoc`](https://github.com/shaircast/nocnoc): Swift access to the SPU sensor and knock filtering.
+- [`olvvier/apple-silicon-accelerometer`](https://github.com/olvvier/apple-silicon-accelerometer): the sensor's report layout, usages, scaling, and wake properties.
+- [`taigrr/spank`](https://github.com/taigrr/spank): proof that a root daemon can listen to this sensor and answer with sound.
 
 ## License
 
-MIT. See [LICENSE](LICENSE).
+MIT. See [LICENSE](LICENSE) and [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md).

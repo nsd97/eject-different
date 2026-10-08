@@ -1,6 +1,6 @@
 # Third-Party Notices
 
-Portions of the Apple SPU HID access and knock-filtering implementation are adapted from the following MIT-licensed projects.
+Portions of the Apple SPU HID access and knock filtering in `EjectDifferent/Knock.swift` are adapted from the following MIT-licensed projects.
 
 ## nocnoc
 

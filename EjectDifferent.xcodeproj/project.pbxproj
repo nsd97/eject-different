@@ -1,0 +1,449 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 110;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		0A155D213077C88C00844C35 /* com.nsd97.EjectDifferent.daemon.plist in Embed Launch Daemon */ = {isa = PBXBuildFile; fileRef = 0A155D203077C88C00844C35 /* com.nsd97.EjectDifferent.daemon.plist */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		0A155CF83077C88C00844C35 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 0A155CE23077C88B00844C35 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 0A155CE93077C88B00844C35;
+			remoteInfo = EjectDifferent;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		0A155D223077C88C00844C35 /* Embed Launch Daemon */ = {
+			isa = PBXCopyFilesBuildPhase;
+			dstPath = Contents/Library/LaunchDaemons;
+			dstSubfolderSpec = 1;
+			files = (
+				0A155D213077C88C00844C35 /* com.nsd97.EjectDifferent.daemon.plist in Embed Launch Daemon */,
+			);
+			name = "Embed Launch Daemon";
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0A155CEA3077C88B00844C35 /* Eject Different.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Eject Different.app"; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A155CF73077C88C00844C35 /* EjectDifferentTests.xctest */ = {isa = PBXFileReference; explicitFileType = wrapper.cfbundle; includeInIndex = 0; path = EjectDifferentTests.xctest; sourceTree = BUILT_PRODUCTS_DIR; };
+		0A155D203077C88C00844C35 /* com.nsd97.EjectDifferent.daemon.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = com.nsd97.EjectDifferent.daemon.plist; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFileSystemSynchronizedRootGroup section */
+		0A155CEC3077C88B00844C35 /* EjectDifferent */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EjectDifferent;
+			sourceTree = "<group>";
+		};
+		0A155CFA3077C88C00844C35 /* EjectDifferentTests */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			path = EjectDifferentTests;
+			sourceTree = "<group>";
+		};
+/* End PBXFileSystemSynchronizedRootGroup section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		0A155CE73077C88B00844C35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+		0A155CF43077C88C00844C35 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			files = (
+			);
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		0A155CE13077C88B00844C35 = {
+			isa = PBXGroup;
+			children = (
+				0A155CEC3077C88B00844C35 /* EjectDifferent */,
+				0A155D233077C88C00844C35 /* LaunchDaemons */,
+				0A155CFA3077C88C00844C35 /* EjectDifferentTests */,
+				0A155CEB3077C88B00844C35 /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		0A155CEB3077C88B00844C35 /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				0A155CEA3077C88B00844C35 /* Eject Different.app */,
+				0A155CF73077C88C00844C35 /* EjectDifferentTests.xctest */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		0A155D233077C88C00844C35 /* LaunchDaemons */ = {
+			isa = PBXGroup;
+			children = (
+				0A155D203077C88C00844C35 /* com.nsd97.EjectDifferent.daemon.plist */,
+			);
+			path = LaunchDaemons;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		0A155CE93077C88B00844C35 /* EjectDifferent */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A155D093077C88C00844C35 /* Build configuration list for PBXNativeTarget "EjectDifferent" */;
+			buildPhases = (
+				0A155CE63077C88B00844C35 /* Sources */,
+				0A155CE73077C88B00844C35 /* Frameworks */,
+				0A155CE83077C88B00844C35 /* Resources */,
+				0A155D223077C88C00844C35 /* Embed Launch Daemon */,
+			);
+			buildRules = (
+			);
+			fileSystemSynchronizedGroups = (
+				0A155CEC3077C88B00844C35 /* EjectDifferent */,
+			);
+			name = EjectDifferent;
+			productName = EjectDifferent;
+			productReference = 0A155CEA3077C88B00844C35 /* Eject Different.app */;
+			productType = "com.apple.product-type.application";
+		};
+		0A155CF63077C88C00844C35 /* EjectDifferentTests */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 0A155D0C3077C88C00844C35 /* Build configuration list for PBXNativeTarget "EjectDifferentTests" */;
+			buildPhases = (
+				0A155CF33077C88C00844C35 /* Sources */,
+				0A155CF43077C88C00844C35 /* Frameworks */,
+				0A155CF53077C88C00844C35 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				0A155CF93077C88C00844C35 /* PBXTargetDependency */,
+			);
+			fileSystemSynchronizedGroups = (
+				0A155CFA3077C88C00844C35 /* EjectDifferentTests */,
+			);
+			name = EjectDifferentTests;
+			productName = EjectDifferentTests;
+			productReference = 0A155CF73077C88C00844C35 /* EjectDifferentTests.xctest */;
+			productType = "com.apple.product-type.bundle.unit-test";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		0A155CE23077C88B00844C35 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastSwiftUpdateCheck = 2710;
+				LastUpgradeCheck = 2710;
+				TargetAttributes = {
+					0A155CE93077C88B00844C35 = {
+						CreatedOnToolsVersion = 27.1;
+					};
+					0A155CF63077C88C00844C35 = {
+						CreatedOnToolsVersion = 27.1;
+						TestTargetID = 0A155CE93077C88B00844C35;
+					};
+				};
+			};
+			buildConfigurationList = 0A155CE53077C88B00844C35 /* Build configuration list for PBXProject "EjectDifferent" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 0A155CE13077C88B00844C35;
+			minimizedProjectReferenceProxies = 1;
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 0A155CEB3077C88B00844C35 /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				0A155CE93077C88B00844C35 /* EjectDifferent */,
+				0A155CF63077C88C00844C35 /* EjectDifferentTests */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXResourcesBuildPhase section */
+		0A155CE83077C88B00844C35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+		0A155CF53077C88C00844C35 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXResourcesBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		0A155CE63077C88B00844C35 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+		0A155CF33077C88C00844C35 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			files = (
+			);
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		0A155CF93077C88C00844C35 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 0A155CE93077C88B00844C35 /* EjectDifferent */;
+			targetProxy = 0A155CF83077C88C00844C35 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		0A155D073077C88C00844C35 /* Debug configuration for PBXProject "EjectDifferent" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"DEBUG=1",
+					"$(inherited)",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				ONLY_ACTIVE_ARCH = YES;
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+			};
+			name = Debug;
+		};
+		0A155D083077C88C00844C35 /* Release configuration for PBXProject "EjectDifferent" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++20";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				COPY_PHASE_STRIP = NO;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_USER_SCRIPT_SANDBOXING = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu17;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				LOCALIZATION_PREFERS_STRING_CATALOGS = YES;
+				MACOSX_DEPLOYMENT_TARGET = 15.0;
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+			};
+			name = Release;
+		};
+		0A155D0A3077C88C00844C35 /* Debug configuration for PBXNativeTarget "EjectDifferent" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Noah Deskin. MIT License.";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nsd97.EjectDifferent;
+				PRODUCT_MODULE_NAME = EjectDifferent;
+				PRODUCT_NAME = "Eject Different";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+		0A155D0B3077C88C00844C35 /* Release configuration for PBXNativeTarget "EjectDifferent" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				ENABLE_APP_SANDBOX = NO;
+				ENABLE_HARDENED_RUNTIME = YES;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.utilities";
+				INFOPLIST_KEY_NSHumanReadableCopyright = "Copyright © 2026 Noah Deskin. MIT License.";
+				LD_RUNPATH_SEARCH_PATHS = "@executable_path/../Frameworks";
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nsd97.EjectDifferent;
+				PRODUCT_MODULE_NAME = EjectDifferent;
+				PRODUCT_NAME = "Eject Different";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		0A155D0D3077C88C00844C35 /* Debug configuration for PBXNativeTarget "EjectDifferentTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nsd97.EjectDifferentTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Eject Different.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Eject Different";
+			};
+			name = Debug;
+		};
+		0A155D0E3077C88C00844C35 /* Release configuration for PBXNativeTarget "EjectDifferentTests" */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				BUNDLE_LOADER = "$(TEST_HOST)";
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = G73HRYY9K6;
+				GENERATE_INFOPLIST_FILE = YES;
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.nsd97.EjectDifferentTests;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SUPPORTED_PLATFORMS = macosx;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_DEFAULT_ACTOR_ISOLATION = MainActor;
+				SWIFT_EMIT_LOC_STRINGS = NO;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 6.0;
+				TEST_HOST = "$(BUILT_PRODUCTS_DIR)/Eject Different.app/$(BUNDLE_EXECUTABLE_FOLDER_PATH)/Eject Different";
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		0A155CE53077C88B00844C35 /* Build configuration list for PBXProject "EjectDifferent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A155D073077C88C00844C35 /* Debug configuration for PBXProject "EjectDifferent" */,
+				0A155D083077C88C00844C35 /* Release configuration for PBXProject "EjectDifferent" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		0A155D093077C88C00844C35 /* Build configuration list for PBXNativeTarget "EjectDifferent" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A155D0A3077C88C00844C35 /* Debug configuration for PBXNativeTarget "EjectDifferent" */,
+				0A155D0B3077C88C00844C35 /* Release configuration for PBXNativeTarget "EjectDifferent" */,
+			);
+			defaultConfigurationName = Release;
+		};
+		0A155D0C3077C88C00844C35 /* Build configuration list for PBXNativeTarget "EjectDifferentTests" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				0A155D0D3077C88C00844C35 /* Debug configuration for PBXNativeTarget "EjectDifferentTests" */,
+				0A155D0E3077C88C00844C35 /* Release configuration for PBXNativeTarget "EjectDifferentTests" */,
+			);
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 0A155CE23077C88B00844C35 /* Project object */;
+	validationLevel = 1;
+}
