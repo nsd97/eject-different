@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  The listening half of Eject Different. The app registers this plist with
+  SMAppService.daemon(plistName:), and launchd then runs the app's own
+  executable as root in daemon mode. BundleProgram is a path inside the app
+  bundle and only works for plists registered through SMAppService
+  (launchd.plist(5)). KeepAlive starts the daemon at boot and restarts it if
+  it exits. Interactive stops launchd from throttling the CPU that a knock
+  needs to be heard on time.
+-->
+<plist version="1.0">
+<dict>
+	<key>Label</key>
+	<string>com.nsd97.EjectDifferent.daemon</string>
+	<key>BundleProgram</key>
+	<string>Contents/MacOS/Eject Different</string>
+	<key>ProgramArguments</key>
+	<array>
+		<string>Eject Different</string>
+		<string>--daemon</string>
+	</array>
+	<key>KeepAlive</key>
+	<true/>
+	<key>ProcessType</key>
+	<string>Interactive</string>
+</dict>
+</plist>

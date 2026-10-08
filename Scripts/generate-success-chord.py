@@ -7,8 +7,7 @@ rate = 48000
 duration = 1.45
 # Bright C-major add-9: familiar optimism, original synthesis—not an Apple recording.
 notes = [(261.63, .30), (329.63, .24), (392.00, .25), (523.25, .16), (587.33, .10)]
-out = Path(__file__).resolve().parents[1] / "Sources" / "EjectDifferent" / "Resources" / "different.wav"
-out.parent.mkdir(parents=True, exist_ok=True)
+out = Path(__file__).resolve().parents[1] / "EjectDifferent" / "different.wav"
 with wave.open(str(out), "wb") as w:
     w.setparams((2, 2, rate, 0, "NONE", "not compressed"))
     frames = bytearray()
