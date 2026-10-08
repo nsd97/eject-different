@@ -11,7 +11,8 @@
 // motion is slow, under about 15 Hz. A knuckle on aluminum is an impact whose
 // energy sits between about 15 and 80 Hz; the sensor reports little above that.
 // So the detector listens only above `KnockDetector.cutoff`. Measured on a lap,
-// that leaves typing, clicks and shifting around well under the weakest knock.
+// that leaves typing, clicks and the lid well under the weakest knock. A shove
+// can still land harder than a knock; the rhythm, not loudness, turns it away.
 // The gyroscope is not used: on a lap it mostly measures the lap.
 
 import Accelerate
@@ -175,8 +176,9 @@ struct KnockDetector {
 
     /// An impact starts when knock-band acceleration crosses this, in g.
     /// Measured on the lap: the weakest real knock reached 0.054, a hard Return
-    /// keypress 0.031, shifting in the seat 0.014, typing 0.011, trackpad clicks
-    /// 0.006. The corpus test reports the range of triggers that work.
+    /// keypress 0.031, the lid 0.018, shifting in the seat 0.014, typing 0.011,
+    /// trackpad clicks 0.006. One shove reached 0.155, but as a single impact.
+    /// The corpus test reports the range of triggers that work.
     var trigger = 0.041
     /// An impact is over, and the next one can count, once the band has stayed
     /// below this for `settle`. Measured knocks ring for about 30 ms above it.

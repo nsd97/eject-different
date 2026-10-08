@@ -206,6 +206,32 @@ struct KnockRhythmTests {
     }
 }
 
+/// The in-app recorder writes what the corpus test reads.
+struct RecorderTests {
+    private let folder = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
+
+    @Test func aGuidedSessionSavesEveryStepBackToBack() throws {
+        let recorder = try Recorder(scenario: .moving, folder: folder)
+        var reading = 0
+        while !recorder.record(SIMD3(0, 0, -1), at: Double(reading) / 800) { reading += 1 }
+        let labels = try #require(try recorder.finish(early: false))
+        let recording = try JSONDecoder().decode(Recording.self, from: Data(contentsOf: labels))
+        #expect(recording.segments.map(\.label) == Recorder.Scenario.moving.steps.map(\.prompt))
+        #expect(zip(recording.segments, recording.segments.dropFirst()).allSatisfy { $0.end == $1.start })
+        #expect(recording.segments.first?.start == 0)
+        #expect(recording.split == .holdout)
+        let readings = try Data(contentsOf: labels.deletingPathExtension().appendingPathExtension("bin"))
+        #expect(readings.count == (recording.segments.last?.end ?? 0) * 6)
+    }
+
+    @Test func stoppingAGuidedSessionEarlySavesNothing() throws {
+        let recorder = try Recorder(scenario: .lap, folder: folder)
+        for reading in 0..<800 { _ = recorder.record(SIMD3(0, 0, -1), at: Double(reading) / 800) }
+        #expect(try recorder.finish(early: true) == nil)
+        #expect(try FileManager.default.contentsOfDirectory(atPath: folder.path(percentEncoded: false)).isEmpty)
+    }
+}
+
 struct SensorReportTests {
     @Test func readsLittleEndianQ16Axes() {
         var report = [UInt8](repeating: 0, count: MotionSensor.reportLength)

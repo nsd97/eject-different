@@ -35,8 +35,10 @@ While plugged in, your Mac stays awake so it can hear you, even with the lid clo
 Watch it listen and eject:
 
 ```bash
-log stream --level info --predicate 'subsystem == "com.nsd97.EjectDifferent"'
+log stream --predicate 'subsystem == "com.nsd97.EjectDifferent"'
 ```
+
+Every knock appears with its number and how hard it landed, such as `Knock 2: peak 0.072 g`. An impact that didn't count says why.
 
 See what a knock would eject, without ejecting anything:
 
@@ -64,9 +66,9 @@ The old installer also set display sleep to 10 minutes. If you want your old set
 
 Inside every Apple silicon MacBook is a Bosch motion sensor behind Apple's Sensor Processing Unit. There's no public API for it. macOS exposes its accelerometer as a vendor HID device, and the listener wakes it and reads 800 reports a second.
 
-A Mac on a lap is never still, but that motion is slow. A knuckle on aluminum is fast: its energy sits between about 15 and 80 Hz. So the listener ignores everything below 40 Hz and listens for impacts above it. Typing, trackpad clicks, shifting in your seat, and moving the lid all stay well under the weakest knock. Three knocks about a third of a second apart make a triple, and the Mac answers the instant the third lands. One or two knocks do nothing, and neither does a single shove, however hard.
+A Mac on a lap is never still, but that motion is slow. A knuckle on aluminum is fast: its energy sits between about 15 and 80 Hz. So the listener ignores everything below 40 Hz and listens for impacts above it. Typing, trackpad clicks, and moving the lid all stay well under the weakest knock. Three knocks about a third of a second apart make a triple, and the Mac answers the instant the third lands. One or two knocks do nothing, and neither does shifting in your seat, even when it lands harder than a knock.
 
-The thresholds were measured with the Mac on a lap, and the tests replay that recording. To measure your own, see `Scripts/calibrate.swift`.
+The thresholds were measured with the Mac on a lap. That recording and every labeled one since live in `Evaluation/`, and the tests score the detector against all of them: each triple heard exactly once, and nothing else ever. Debug builds add a live chart of what the detector hears, and a recorder for new sessions on a lap, on a desk, on the move, or through a day of ordinary use. AGENTS.md explains how the recordings are used.
 
 Ejecting uses the same calls Finder does. Each disk is asked to eject. If it refuses, macOS names the process holding it, and that is how Time Machine is told apart from everything else.
 

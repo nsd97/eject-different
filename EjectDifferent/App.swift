@@ -2,8 +2,9 @@
 //
 // Turning it on registers the daemon with SMAppService. macOS then asks you to
 // approve it in System Settings › General › Login Items & Extensions, because
-// it runs as root. Nothing happens at launch, so opening the app (or running
-// the tests it hosts) never changes anything.
+// it runs as root. Opening the app (or running the tests it hosts) never
+// changes anything; Debug builds also start reading the sensor for the
+// monitor in Monitor.swift, which only reads.
 
 import AppKit
 import ServiceManagement
@@ -73,9 +74,15 @@ struct StatusView: View {
                     .foregroundStyle(.red)
                     .multilineTextAlignment(.center)
             }
+            #if DEBUG
+            if listener != .noSensor {
+                Divider().padding(.vertical, 6)
+                MonitorView(listenerOn: listener == .on)
+            }
+            #endif
         }
         .padding(36)
-        .frame(width: 440)
+        .frame(width: 460)
         .task {
             // Coming back from System Settings is how approval arrives.
             for await _ in NotificationCenter.default.notifications(named: NSApplication.didBecomeActiveNotification) {
