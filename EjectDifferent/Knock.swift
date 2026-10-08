@@ -40,11 +40,16 @@ enum MotionSensor {
     private static var handler: ((SIMD3<Double>, TimeInterval) -> Void)?
     private static var device: IOHIDDevice?  // kept open for the life of the process
 
-    /// Wakes the accelerometer and calls `handler` on the main actor for every
-    /// reading, in g, 800 times a second. Needs root.
-    static func start(_ handler: @escaping (SIMD3<Double>, TimeInterval) -> Void) throws {
-        self.handler = handler
+    /// Seconds per tick of the report timestamps, which count in mach absolute time.
+    nonisolated static let secondsPerTick: Double = {
+        var timebase = mach_timebase_info()
+        mach_timebase_info(&timebase)
+        return Double(timebase.numer) / Double(timebase.denom) / 1e9
+    }()
 
+    /// Wakes the accelerometer so it reports 800 times a second. Needs root,
+    /// so only the daemon calls it; while the daemon runs, any process can read.
+    static func wake() throws {
         // Ask the driver to report every millisecond (ReportInterval is in
         // microseconds). Its fastest rate is 800 a second (the driver's
         // sensor_rates property), and that is what arrives. The knock filter is
@@ -56,7 +61,13 @@ enum MotionSensor {
                 guard status == KERN_SUCCESS else { throw Failure.wake(status) }
             }
         }
+    }
 
+    /// Calls `handler` on the main actor for every reading: acceleration in g,
+    /// and the time the report arrived, in seconds. Opening the device doesn't
+    /// seize it, so the daemon and the app's monitor can both read at once.
+    static func start(_ handler: @escaping (SIMD3<Double>, TimeInterval) -> Void) throws {
+        self.handler = handler
         guard let service = accelerometers("AppleSPUHIDDevice").first else { throw Failure.missing }
         defer { IOObjectRelease(service) }
         guard let device = IOHIDDeviceCreate(kCFAllocatorDefault, service) else { throw Failure.missing }
@@ -80,8 +91,8 @@ enum MotionSensor {
         return SIMD3(axis(6), axis(10), axis(14))
     }
 
-    fileprivate static func deliver(_ value: SIMD3<Double>) {
-        handler?(value, ProcessInfo.processInfo.systemUptime)
+    fileprivate static func deliver(_ value: SIMD3<Double>, at time: TimeInterval) {
+        handler?(value, time)
     }
 
     /// The SPU accelerometer's entries of an I/O Kit class. Its driver and device
@@ -107,28 +118,39 @@ enum MotionSensor {
 
 /// The HID callback. The device is scheduled on the main queue, so the main
 /// actor is already running here. The report is parsed first, so only plain
-/// values cross into it.
+/// values cross into it. Its own timestamp is used rather than the time the
+/// callback runs, because in the app the main thread is shared with the UI and
+/// reports can arrive in bursts.
 private nonisolated func reportArrived(_ context: UnsafeMutableRawPointer?, _ result: IOReturn, _ sender: UnsafeMutableRawPointer?, _ type: IOHIDReportType, _ id: UInt32, _ report: UnsafeMutablePointer<UInt8>, _ length: CFIndex, _ timeStamp: UInt64) {
     guard let value = MotionSensor.axes(UnsafeRawBufferPointer(start: report, count: length)) else { return }
-    MainActor.assumeIsolated { MotionSensor.deliver(value) }
+    let time = Double(timeStamp) * MotionSensor.secondsPerTick
+    MainActor.assumeIsolated { MotionSensor.deliver(value, at: time) }
 }
 
 /// Hears three knocks in a row, on a lap or a desk, and nothing else: not
 /// typing, not clicking, not shifting around, not one knock or two. It answers
 /// the moment the third knock lands.
 ///
-/// The thresholds were measured on 2026-10-08 with an M2 Max MacBook Pro on a
-/// lap: three triple knocks, three single knocks, typing, trackpad clicks,
-/// shifting in a seat, and moving the lid. That recording is replayed in the
-/// tests (EjectDifferentTests/lap-calibration.bin). To recalibrate, record a new
-/// session with Scripts/calibrate.swift, retune these constants, and keep the
-/// replay test passing.
+/// The daemon, the Debug build's live monitor and the evaluation in the tests
+/// all run this same code. The constants were measured on 2026-10-08 with an
+/// M2 Max MacBook Pro on a lap; Evaluation/ holds that recording and every one
+/// since, and the corpus test scores the detector against all of them. Tune
+/// only against recordings marked "tuning" (see AGENTS.md).
 struct KnockDetector {
-    /// One knock as heard: its place in the current run (3 completes a triple)
-    /// and the knock-band acceleration, in g, at the reading that crossed the trigger.
-    struct Knock {
-        let number: Int
-        let strength: Double
+    /// What one reading meant, when it meant something.
+    enum Event: Equatable {
+        /// A knock began. Number 3 completes a triple, reported the instant it lands.
+        case knock(Int)
+        /// An impact began that doesn't count, and why.
+        case ignored(Reason)
+        /// The impact that began last has stopped ringing; its loudest, in g.
+        case ended(peak: Double)
+    }
+
+    enum Reason: String {
+        case tooSoon = "too soon after the last impact"
+        case noPause = "no pause before it"
+        case coolingDown = "just after three knocks"
     }
 
     /// Readings per second, the sensor's fastest rate.
@@ -136,17 +158,13 @@ struct KnockDetector {
     /// Motion slower than this, in Hz, is ignored. On a lap that is nearly all
     /// of the motion; the energy of a knock sits above it.
     static let cutoff = 40.0
-    /// A knock starts when knock-band acceleration crosses this, in g. Measured:
-    /// the weakest real knock reached 0.054, a hard Return keypress 0.031,
-    /// shifting in the seat 0.014, typing 0.011, trackpad clicks 0.006. The
-    /// trigger sits halfway between the knock and the keypress, in ratio.
-    static let trigger = 0.041
-    /// A knock is over, and the next impact can count, once the band falls below
-    /// this. Measured knocks ring for about 30 ms above it.
-    static let rearm = trigger / 3
-    /// Knocks in a triple come at least this far apart (seconds). One shove of
-    /// the Mac can break into impacts 0.01 to 0.02 s apart; measured knocks came
-    /// 0.27 to 0.36 s apart.
+    /// An impact is over once the band has stayed under `rearm` this long
+    /// (seconds). A ring isn't over just because it dips through zero, as a
+    /// vibration along one axis does every half cycle, and a shove that lands
+    /// in parts 0.01 to 0.02 s apart stays one impact.
+    static let settle = 0.02
+    /// Knocks in a triple come at least this far apart (seconds); a bounce
+    /// sooner than that doesn't count. Measured knocks came 0.27 to 0.36 s apart.
     static let shortestGap = 0.10
     /// Knocks further apart than this don't belong together (seconds). A run of
     /// knocks also has to start after at least this long without an impact, so
@@ -154,6 +172,17 @@ struct KnockDetector {
     static let longestGap = 0.60
     /// After a triple knock, everything is ignored for this long (seconds).
     static let cooldown = 1.5
+
+    /// An impact starts when knock-band acceleration crosses this, in g.
+    /// Measured on the lap: the weakest real knock reached 0.054, a hard Return
+    /// keypress 0.031, shifting in the seat 0.014, typing 0.011, trackpad clicks
+    /// 0.006. The corpus test reports the range of triggers that work.
+    var trigger = 0.041
+    /// An impact is over, and the next one can count, once the band has stayed
+    /// below this for `settle`. Measured knocks ring for about 30 ms above it.
+    var rearm: Double { trigger / 3 }
+    /// Knock-band acceleration at the latest reading, in g.
+    private(set) var level = 0.0
 
     /// Second-order Butterworth high-pass at `cutoff` (the Audio EQ Cookbook
     /// form, Q = 1/√2), one per axis, run by Accelerate.
@@ -167,13 +196,14 @@ struct KnockDetector {
     private var input = [0.0], output = [0.0]
     private var origin: SIMD3<Double>?
     private var armed = true
+    private var peak = 0.0
+    private var quietSince: TimeInterval?
     private var knocks: [TimeInterval] = []
     private var lastImpact = -Double.infinity
     private var quietUntil = -Double.infinity
 
-    /// Feeds one accelerometer reading, in g. Returns the knock it starts, if it
-    /// starts one; a knock numbered 3 is a triple knock, reported the instant it lands.
-    mutating func hears(_ acceleration: SIMD3<Double>, at time: TimeInterval) -> Knock? {
+    /// Feeds one accelerometer reading, in g, taken at `time` seconds.
+    mutating func hears(_ acceleration: SIMD3<Double>, at time: TimeInterval) -> Event? {
         // Measuring from the first reading keeps the filter from mistaking
         // switch-on, a jump from zero to gravity, for an impact.
         let origin = self.origin ?? acceleration
@@ -184,30 +214,45 @@ struct KnockDetector {
             filters[axis].apply(input: input, output: &output)
             shake[axis] = output[0]
         }
-        let level = simd_length(shake)
+        return hears(level: simd_length(shake), at: time)
+    }
 
+    /// The rhythm alone, fed an already-filtered level. The evaluation uses it to
+    /// try other triggers without filtering a recording again.
+    mutating func hears(level: Double, at time: TimeInterval) -> Event? {
+        self.level = level
         if !armed {
-            if level < Self.rearm { armed = true }  // the last impact has stopped ringing
-            return nil
+            peak = max(peak, level)
+            guard level < rearm else {
+                quietSince = nil
+                return nil
+            }
+            let quiet = quietSince ?? time
+            quietSince = quiet
+            guard time - quiet >= Self.settle else { return nil }
+            armed = true
+            quietSince = nil
+            return .ended(peak: peak)
         }
-        guard level >= Self.trigger else { return nil }
+        guard level >= trigger else { return nil }
         armed = false
+        peak = level
 
         let sinceLast = time - lastImpact
         lastImpact = time
-        guard time >= quietUntil else { return nil }
+        guard time >= quietUntil else { return .ignored(.coolingDown) }
         if !knocks.isEmpty, sinceLast >= Self.shortestGap, sinceLast <= Self.longestGap {
             knocks.append(time)
         } else if sinceLast > Self.longestGap {
             knocks = [time]
         } else {
-            return nil  // too close on the heels of another impact to be a knock
+            return .ignored(sinceLast < Self.shortestGap ? .tooSoon : .noPause)
         }
-        let knock = Knock(number: knocks.count, strength: level)
-        if knocks.count == 3 {
+        let number = knocks.count
+        if number == 3 {
             knocks.removeAll()
             quietUntil = time + Self.cooldown
         }
-        return knock
+        return .knock(number)
     }
 }

@@ -10,27 +10,34 @@ import AVFAudio
 import CoreAudio
 import Foundation
 import IOKit.audio
+import os
 
 enum Chime {
     case success  // an original C-major add-9 chord (Scripts/generate-success-chord.py)
     case refusal  // macOS's own Sosumi
 
-    /// Both sounds, decoded once. Creating a player doesn't claim the audio
-    /// hardware; play() does, and gives it back when the sound ends.
-    private static let players: [Chime: AVAudioPlayer] = [
-        .success: Bundle.main.url(forResource: "different", withExtension: "wav"),
-        .refusal: URL(filePath: "/System/Library/Sounds/Sosumi.aiff"),
-    ].compactMapValues { url in url.flatMap { try? AVAudioPlayer(contentsOf: $0) } }
+    private static let log = Logger(subsystem: "com.nsd97.EjectDifferent", category: "chime")
 
-    /// Loads the sounds and Core Audio up front, so the first chime after the
-    /// Mac starts comes as quickly as every later one (about 30 ms, not 200).
+    /// Warms up Core Audio when the daemon starts. Loading it is most of the
+    /// first chime's delay (about 200 ms, against 30 ms afterwards).
     static func load() {
-        _ = players
         _ = defaultOutput()
     }
 
-    static func play(_ chime: Chime) async {
-        guard let player = players[chime] else { return }
+    /// Plays the chime and returns whether it actually started. Each chime gets
+    /// a fresh player. A reused one plays only once in the daemon, which runs
+    /// dispatchMain() and so has no run loop for the player to reset on; a fresh
+    /// player also follows the current output, such as newly connected AirPods.
+    @discardableResult
+    static func play(_ chime: Chime) async -> Bool {
+        let url = switch chime {
+        case .success: Bundle.main.url(forResource: "different", withExtension: "wav")
+        case .refusal: URL(filePath: "/System/Library/Sounds/Sosumi.aiff")
+        }
+        guard let url, let player = try? AVAudioPlayer(contentsOf: url) else {
+            log.error("Couldn't load the \(String(describing: chime), privacy: .public) sound")
+            return false
+        }
 
         let output = defaultOutput()
         let muted: UInt32? = output.flatMap { property($0, kAudioDevicePropertyMute) }
@@ -41,13 +48,17 @@ enum Chime {
             setProperty(output, kAudioDevicePropertyMute, UInt32(0))
             if loud { setProperty(output, kAudioDevicePropertyVolumeScalar, Float32(1)) }
         }
-        player.currentTime = 0
-        player.play()
-        try? await Task.sleep(for: .seconds(player.duration))
+        let started = player.play()
+        if started {
+            try? await Task.sleep(for: .seconds(player.duration))
+        } else {
+            log.error("The \(String(describing: chime), privacy: .public) sound didn't start")
+        }
         if let output {
             if loud, let volume { setProperty(output, kAudioDevicePropertyVolumeScalar, volume) }
             if let muted { setProperty(output, kAudioDevicePropertyMute, muted) }
         }
+        return started
     }
 
     private static func defaultOutput() -> AudioObjectID? {

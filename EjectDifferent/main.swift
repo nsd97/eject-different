@@ -9,6 +9,7 @@
 
 import Foundation
 import SwiftUI
+import notify
 import os
 
 switch CommandLine.arguments.dropFirst().first {
@@ -27,8 +28,15 @@ default:
 /// awaits rather than blocks, so the Mac keeps listening while a disk ejects.
 enum Daemon {
     static let log = Logger(subsystem: "com.nsd97.EjectDifferent", category: "daemon")
+    /// Posted with notify(3), which reaches processes of every user, so the app's
+    /// monitor can show what the listener heard and whether the chime played.
+    /// Watch them with `notifyutil -w <name>`.
+    static let tripleNotification = "com.nsd97.EjectDifferent.triple"
+    static let chimedNotification = "com.nsd97.EjectDifferent.chimed"
     private static var detector = KnockDetector()
     private static var ejecting = false
+    /// How the impact still ringing was heard, logged with its peak when it ends.
+    private static var impact = ""
 
     static func run() -> Never {
         // On AC power, keep the Mac awake, lid closed or not, so it can hear a
@@ -39,6 +47,7 @@ enum Daemon {
         Chime.load()
 
         do {
+            try MotionSensor.wake()
             try MotionSensor.start(heard)
         } catch {
             log.fault("Cannot read the motion sensor: \(String(describing: error), privacy: .public)")
@@ -49,17 +58,33 @@ enum Daemon {
     }
 
     private static func heard(_ acceleration: SIMD3<Double>, _ time: TimeInterval) {
-        guard let knock = detector.hears(acceleration, at: time) else { return }
-        log.info("Knock \(knock.number): \(knock.strength, format: .fixed(precision: 3)) g")
+        switch detector.hears(acceleration, at: time) {
+        case .knock(let number):
+            impact = "Knock \(number)"
+            if number == 3 { tripleKnocked() }
+        case .ignored(let reason):
+            impact = "Not counted, \(reason.rawValue)"
+        case .ended(let peak):
+            // One saved line per impact, written once its true peak is known.
+            log.notice("\(impact, privacy: .public): peak \(peak, format: .fixed(precision: 3)) g")
+        case nil:
+            break
+        }
+    }
+
+    private static func tripleKnocked() {
+        log.notice("Three knocks")
+        notify_post(tripleNotification)
         // Knocks while a previous knock is still ejecting are ignored. Time
         // Machine can hold an eject open for `Eject.timeMachineGrace`, far
         // longer than `KnockDetector.cooldown`.
-        guard knock.number == 3, !ejecting else { return }
+        guard !ejecting else { return }
         ejecting = true
-        log.notice("Three knocks")
         Task {
             let result = await Eject.everything()
-            await Chime.play(result.succeeded ? .success : .refusal)
+            if await Chime.play(result.succeeded ? .success : .refusal) {
+                notify_post(chimedNotification)
+            }
             ejecting = false
         }
     }

@@ -4,53 +4,155 @@ import IOKit.storage
 import Testing
 @testable import EjectDifferent
 
-/// A real 71-second session, recorded with the Mac on a lap: the accelerometer
-/// as the detector sees it, step by step. Each reading is three little-endian
-/// Int16s in units of 1/16384 g, taken 1.2545 ms apart.
-struct LapCalibrationReplayTests {
-    enum Step: String { case still, triple, single, typing, trackpad, shift, lid }
-    static let steps: [(step: Step, firstReading: Int)] = [
-        (.still, 0), (.triple, 4385), (.triple, 9169), (.triple, 13952),
-        (.single, 18735), (.single, 21924), (.single, 25112), (.typing, 28301),
-        (.trackpad, 36273), (.shift, 41057), (.shift, 45840), (.lid, 50623),
-    ]
+/// Scores the detector against every recording in Evaluation/. Each recording's
+/// labels say what must happen in each segment: a "triple" segment fires exactly
+/// once, and every other segment never fires. The scorecard also shows the range
+/// of triggers that would still pass, and how near the knocks came to failing.
+struct EvaluationTests {
+    struct Impact {
+        let start: Int
+        let knock: Int?  // nil when the detector didn't count it
+        let peak: Double
+    }
 
-    /// Every knock the detector hears, by the index of the step it fell in.
-    static let heard: [Int: [KnockDetector.Knock]] = {
-        let file = URL(filePath: #filePath).deletingLastPathComponent().appending(path: "lap-calibration.bin")
-        let raw = try! Data(contentsOf: file)
-        var detector = KnockDetector()
-        var heard: [Int: [KnockDetector.Knock]] = [:]
-        raw.withUnsafeBytes { bytes in
-            for reading in 0..<(bytes.count / 6) {
-                func axis(_ i: Int) -> Double {
-                    Double(Int16(littleEndian: bytes.loadUnaligned(fromByteOffset: reading * 6 + i * 2, as: Int16.self))) / 16384
+    struct Replay {
+        let name: String
+        let recording: Recording
+        let levels: [Double]
+        var triples: [Int] = []
+        var impacts: [Impact] = []
+        var gaps: [Double] = []
+    }
+
+    static let folder = URL(filePath: #filePath).deletingLastPathComponent().deletingLastPathComponent().appending(path: "Evaluation")
+
+    /// Runs each recording once through the daemon's own code path.
+    static func replays() throws -> [Replay] {
+        let labels = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
+            .filter { $0.pathExtension == "json" }
+            .sorted { $0.lastPathComponent < $1.lastPathComponent }
+        return try labels.map { url in
+            let recording = try JSONDecoder().decode(Recording.self, from: Data(contentsOf: url))
+            let raw = try Data(contentsOf: url.deletingPathExtension().appendingPathExtension("bin"), options: .mappedIfSafe)
+            let count = raw.count / 6
+            var detector = KnockDetector()
+            var levels = [Double](repeating: 0, count: count)
+            var replay = Replay(name: url.deletingPathExtension().lastPathComponent, recording: recording, levels: [])
+            var ringing: (start: Int, knock: Int?)?
+            var run: [Int] = []
+            raw.withUnsafeBytes { bytes in
+                for reading in 0..<count {
+                    func axis(_ i: Int) -> Double {
+                        Double(Int16(littleEndian: bytes.loadUnaligned(fromByteOffset: reading * 6 + i * 2, as: Int16.self))) / 16384
+                    }
+                    let event = detector.hears(SIMD3(axis(0), axis(1), axis(2)), at: Double(reading) * recording.sampleSpacing)
+                    levels[reading] = detector.level
+                    switch event {
+                    case .knock(let number):
+                        ringing = (reading, number)
+                        run = number == 1 ? [reading] : run + [reading]
+                        if number == 3 {
+                            replay.triples.append(reading)
+                            replay.gaps += zip(run.dropFirst(), run).map { Double($0 - $1) * recording.sampleSpacing }
+                        }
+                    case .ignored:
+                        ringing = (reading, nil)
+                    case .ended(let peak):
+                        if let ringing { replay.impacts.append(Impact(start: ringing.start, knock: ringing.knock, peak: peak)) }
+                        ringing = nil
+                    case nil:
+                        break
+                    }
                 }
-                guard let knock = detector.hears(SIMD3(axis(0), axis(1), axis(2)), at: Double(reading) * 0.0012545) else { continue }
-                let step = steps.lastIndex { $0.firstReading <= reading }!
-                heard[step, default: []].append(knock)
+            }
+            return Replay(name: replay.name, recording: recording, levels: levels, triples: replay.triples, impacts: replay.impacts, gaps: replay.gaps)
+        }
+    }
+
+    /// Every segment where triples fired a different number of times than its label says.
+    static func misfires(_ triples: [Int], in recording: Recording) -> [String] {
+        recording.segments.enumerated().compactMap { index, segment in
+            let fired = triples.filter { segment.start <= $0 && $0 < segment.end }.count
+            let expected = segment.expect == .triple ? 1 : 0
+            return fired == expected ? nil : "step \(index + 1) “\(segment.label)”: expected \(expected) triple, fired \(fired)"
+        }
+    }
+
+    /// Triples from a recording's saved levels at another trigger, using the same rhythm rules.
+    static func triples(_ replay: Replay, trigger: Double) -> [Int] {
+        var detector = KnockDetector()
+        detector.trigger = trigger
+        return replay.levels.indices.filter { detector.hears(level: replay.levels[$0], at: Double($0) * replay.recording.sampleSpacing) == .knock(3) }
+    }
+
+    @Test func corpus() throws {
+        let replays = try Self.replays()
+        #expect(!replays.isEmpty, "Evaluation/ has no recordings")
+        for replay in replays {
+            for misfire in Self.misfires(replay.triples, in: replay.recording) {
+                Issue.record("\(replay.name), \(misfire)")
             }
         }
-        return heard
-    }()
 
-    @Test func everyTripleKnockFiresExactlyOnce() {
-        for (index, step) in Self.steps.enumerated() {
-            let triples = Self.heard[index, default: []].filter { $0.number == 3 }.count
-            #expect(triples == (step.step == .triple ? 1 : 0), "step \(index + 1), \(step.step.rawValue)")
+        // The scorecard.
+        func row(_ columns: String...) -> String {
+            zip(columns, [26, 9, 9, 7, 9, 15, 0]).map { $0.padding(toLength: max($1, $0.count), withPad: " ", startingAt: 0) }.joined()
         }
-    }
-
-    @Test func aSingleKnockIsHeardAsOne() {
-        for (index, step) in Self.steps.enumerated() where step.step == .single {
-            #expect(Self.heard[index, default: []].map(\.number) == [1], "step \(index + 1)")
+        func grams(_ value: Double?) -> String { value.map { String(format: "%.3f g", $0) } ?? "–" }
+        let trigger = KnockDetector().trigger
+        var lines = [String(format: "Knock evaluation · trigger %.3f g", trigger),
+                     row("recording", "split", "triples", "false", "singles", "weakest knock", "loudest other")]
+        for replay in replays {
+            let segments = replay.recording.segments
+            func inside(_ index: Int, _ kinds: Set<Recording.Segment.Expect>) -> Bool {
+                segments.contains { kinds.contains($0.expect) && $0.start <= index && index < $0.end }
+            }
+            let tripleSegments = segments.filter { $0.expect == .triple }
+            let found = tripleSegments.filter { s in replay.triples.filter { s.start <= $0 && $0 < s.end }.count == 1 }.count
+            let falseTriples = replay.triples.filter { !inside($0, [.triple]) }.count
+            let singleSegments = segments.filter { $0.expect == .single }
+            let singlesRight = singleSegments.filter { s in replay.impacts.filter { s.start <= $0.start && $0.start < s.end && $0.knock != nil }.count == 1 }.count
+            let weakest = replay.impacts.filter { $0.knock != nil && inside($0.start, [.triple, .single]) }.map(\.peak).min()
+            let loudest = replay.impacts.filter { inside($0.start, [.none]) }.map(\.peak).max()
+            lines.append(row(replay.name, replay.recording.split.rawValue, "\(found)/\(tripleSegments.count)", "\(falseTriples)",
+                             "\(singlesRight)/\(singleSegments.count)", grams(weakest), grams(loudest)))
         }
-    }
-
-    @Test func typingClicksAndTheLidAreNotKnocks() {
-        for (index, step) in Self.steps.enumerated() where [.still, .typing, .trackpad, .lid].contains(step.step) {
-            #expect(Self.heard[index, default: []].isEmpty, "step \(index + 1), \(step.step.rawValue)")
+        for split in [Recording.Split.tuning, .holdout] {
+            let group = replays.filter { $0.recording.split == split }
+            guard !group.isEmpty else {
+                lines.append("\(split.rawValue): no recordings yet")
+                continue
+            }
+            let tried = Array(stride(from: 0.010, through: 0.100, by: 0.003))
+            let working = tried.filter { candidate in
+                group.allSatisfy { Self.misfires(Self.triples($0, trigger: candidate), in: $0.recording).isEmpty }
+            }
+            let quietSeconds = group.reduce(0.0) { total, replay in
+                total + replay.recording.segments.filter { $0.expect == .none }.reduce(0.0) { $0 + Double($1.end - $1.start) * replay.recording.sampleSpacing }
+            }
+            let falseTriples = group.reduce(0) { total, replay in
+                total + replay.triples.filter { index in replay.recording.segments.contains { $0.expect != .triple && $0.start <= index && index < $0.end } }.count
+            }
+            let range: String
+            if let low = working.first, let high = working.last {
+                range = "works from " + (low == tried.first ? "below " : "") + String(format: "%.3f to %.3f g", low, high) + (high == tried.last ? " and above" : "")
+            } else {
+                range = "no trigger works"
+            }
+            let quiet = quietSeconds < 3600 ? String(format: "%.1f min", quietSeconds / 60) : String(format: "%.1f h", quietSeconds / 3600)
+            lines.append("\(split.rawValue): \(range) · \(falseTriples) false triples in \(quiet) without knocking")
         }
+        let gaps = replays.flatMap(\.gaps)
+        if let shortest = gaps.min(), let longest = gaps.max() {
+            lines.append(String(format: "gaps between knocks in triples: %.2f–%.2f s (allowed %.2f–%.2f s)",
+                                shortest, longest, KnockDetector.shortestGap, KnockDetector.longestGap))
+        }
+        // The test runs inside the app, whose output xcodebuild doesn't show, so
+        // the scorecard is also attached to the result: Xcode's test report shows
+        // it, and AGENTS.md has the command that exports it.
+        let scorecard = lines.joined(separator: "\n")
+        print(scorecard)
+        Attachment.record(scorecard, named: "Knock evaluation.txt")
     }
 }
 
@@ -58,18 +160,22 @@ struct LapCalibrationReplayTests {
 /// ring decaying over 10 ms (about 0.07 g in the knock band, ringing about
 /// 26 ms) on top of gravity, at 800 readings a second.
 struct KnockRhythmTests {
-    private func triples(knocks: [TimeInterval], duration: TimeInterval = 6) -> Int {
+    private func events(knocks: [TimeInterval], duration: TimeInterval = 6) -> [KnockDetector.Event] {
         var detector = KnockDetector()
-        var fired = 0
+        var heard: [KnockDetector.Event] = []
         for reading in 0..<Int(duration * 800) {
             let time = Double(reading) / 800
             let ring = knocks.reduce(0.0) { sum, start in
                 let t = time - start
                 return t < 0 ? sum : sum + 0.15 * exp(-t / 0.010) * sin(2 * .pi * 60 * t)
             }
-            if detector.hears(SIMD3(0, 0, -1 + ring), at: time)?.number == 3 { fired += 1 }
+            if let event = detector.hears(SIMD3(0, 0, -1 + ring), at: time) { heard.append(event) }
         }
-        return fired
+        return heard
+    }
+
+    private func triples(knocks: [TimeInterval], duration: TimeInterval = 6) -> Int {
+        events(knocks: knocks, duration: duration).filter { $0 == .knock(3) }.count
     }
 
     @Test func threeKnocksAThirdOfASecondApartAreATriple() {
@@ -87,6 +193,16 @@ struct KnockRhythmTests {
 
     @Test func drummingThatNeverStopsFiresOnce() {
         #expect(triples(knocks: Array(stride(from: 1.0, through: 5.5, by: 0.3))) == 1)
+    }
+
+    @Test func aBounceIsNotCountedAndEveryImpactReportsItsPeak() {
+        // Each synthetic ring is along one axis, so its strength dips through zero
+        // every half cycle; it must still count as one impact.
+        let heard = events(knocks: [1.0, 1.08, 1.4], duration: 2)
+        #expect(heard.filter { if case .ended = $0 { false } else { true } } == [.knock(1), .ignored(.tooSoon), .knock(2)])
+        let peaks = heard.compactMap { if case .ended(let peak) = $0 { peak } else { nil } }
+        #expect(peaks.count == 3)
+        #expect(peaks.allSatisfy { (0.05...0.12).contains($0) }, "peaks \(peaks)")
     }
 }
 
