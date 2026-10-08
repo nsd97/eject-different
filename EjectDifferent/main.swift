@@ -74,6 +74,10 @@ enum Daemon {
 
     private static func tripleKnocked() {
         log.notice("Three knocks")
+        // Start a full wake now, before anything else. Lid closed on AC the Mac
+        // is in DarkWake with the speakers off; this overlaps the wake with the
+        // ejection so the chime is audible the moment the disk leaves.
+        Chime.wake()
         notify_post(tripleNotification)
         // Knocks while a previous knock is still ejecting are ignored. Time
         // Machine can hold an eject open for `Eject.timeMachineGrace`, far

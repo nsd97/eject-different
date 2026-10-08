@@ -5,11 +5,18 @@
 // turns the built-in speakers all the way up, then puts both back exactly.
 // Headphones and AirPods keep your volume: a chime at full volume in your
 // ears would hurt.
+//
+// Through a closed lid on AC the Mac is in DarkWake: the daemon still hears the
+// knock and ejects, but the audio hardware is powered down, so the chime would
+// only be heard on the next full wake (when you open the lid). wake() declares
+// momentary user activity to bring a full wake first, and play() waits for the
+// output device to come back before it sounds.
 
 import AVFAudio
 import CoreAudio
 import Foundation
 import IOKit.audio
+import IOKit.pwr_mgt
 import os
 
 enum Chime {
@@ -18,10 +25,27 @@ enum Chime {
 
     private static let log = Logger(subsystem: "com.nsd97.EjectDifferent", category: "chime")
 
+    /// How long play() will wait for the output to return after a forced wake,
+    /// before sounding anyway. It waits only when audio isn't already live, so a
+    /// knock with the lid open keeps its usual snappy chime.
+    /// ponytail: one knob. If a closed-lid chime still clips, the device reports
+    /// "alive" before it can play; make waitForOutput an unconditional sleep.
+    static let wakeSettle = Duration.seconds(0.8)
+
     /// Warms up Core Audio when the daemon starts. Loading it is most of the
     /// first chime's delay (about 200 ms, against 30 ms afterwards).
     static func load() {
         _ = defaultOutput()
+    }
+
+    /// Brings the Mac from DarkWake to a full, audio-capable wake. Called the
+    /// instant a triple lands, so the wake overlaps the 1–3 s ejection and audio
+    /// is ready by the time the chime plays. Declaring user activity is Apple's
+    /// documented way to light a full wake; it's momentary, so the Mac sleeps
+    /// again on its own, and it writes no power settings.
+    static func wake() {
+        var id = IOPMAssertionID(0)
+        IOPMAssertionDeclareUserActivity("Eject Different chime" as CFString, kIOPMUserActiveLocal, &id)
     }
 
     /// Plays the chime and returns whether it actually started. Each chime gets
@@ -39,6 +63,7 @@ enum Chime {
             return false
         }
 
+        await waitForOutput()
         let output = defaultOutput()
         let muted: UInt32? = output.flatMap { property($0, kAudioDevicePropertyMute) }
         let volume: Float32? = output.flatMap { property($0, kAudioDevicePropertyVolumeScalar) }
@@ -63,6 +88,24 @@ enum Chime {
 
     private static func defaultOutput() -> AudioObjectID? {
         property(AudioObjectID(kAudioObjectSystemObject), kAudioHardwarePropertyDefaultOutputDevice, kAudioObjectPropertyScopeGlobal)
+    }
+
+    /// Waits until the default output is live again after a forced wake, up to
+    /// `wakeSettle`. Returns at once when it's already live, so only a chime that
+    /// had to wake the Mac pays the wait.
+    private static func waitForOutput() async {
+        let deadline = ContinuousClock.now + wakeSettle
+        while !isLive(defaultOutput()), ContinuousClock.now < deadline {
+            try? await Task.sleep(for: .milliseconds(50))
+        }
+    }
+
+    /// Whether an output device exists and reports itself alive. In DarkWake
+    /// there is no live output; after wake() it returns.
+    private static func isLive(_ device: AudioObjectID?) -> Bool {
+        guard let device, device != kAudioObjectUnknown else { return false }
+        let alive: UInt32? = property(device, kAudioDevicePropertyDeviceIsAlive, kAudioObjectPropertyScopeGlobal)
+        return alive == 1
     }
 
     /// The Mac's own speakers: a built-in device whose output stream is a speaker.

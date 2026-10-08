@@ -23,7 +23,7 @@ To build it yourself, open `EjectDifferent.xcodeproj` in Xcode 27 or later, choo
 
 ## Sleep
 
-While plugged in, your Mac stays awake so it can hear you, even with the lid closed. On battery it sleeps as it always has. Your display still sleeps on schedule, and your Energy settings are never changed.
+While plugged in, your Mac stays awake so it can hear you, even with the lid closed. On battery it sleeps as it always has. When it ejects, it briefly wakes the Mac — and the screen, if the lid is open — so you can hear the chime even through a closed lid, then it goes back to sleep on its own. Your Energy settings are never changed.
 
 ## Requirements
 

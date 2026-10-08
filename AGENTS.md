@@ -21,7 +21,7 @@ A macOS app (Swift 6, SwiftUI, macOS 15+) whose one executable is also its own r
 
 - **Never eject the internal disk, a disk image, or a network share.** Disk images report removable, external and ejectable. The "Virtual Interface" protocol check is the only thing keeping Xcode's simulator runtimes mounted.
 - **Only Time Machine may be forced.** A disk held by `backupd` gets a stopped backup and, after `Eject.timeMachineGrace`, `diskutil eject force`. Any other holder means a refusal.
-- **Never write power settings.** No `pmset`, no `SleepDisabled`. Staying awake is `caffeinate -s`, which applies only on AC and is a child of the daemon, so it dies with it.
+- **Never write power settings.** No `pmset`, no `SleepDisabled`. Staying awake is `caffeinate -s`, which applies only on AC and is a child of the daemon, so it dies with it. Answering a knock also declares momentary user activity (`IOPMAssertionDeclareUserActivity`, in `Chime.wake()`) to pull the Mac out of DarkWake into a full wake, so the chime is audible through a closed lid. That sets nothing and holds nothing; the Mac sleeps again on its own. Without it the eject still happens, but the sound is only heard on the next wake.
 - **Full volume only on the built-in speakers.** Always restore volume and mute exactly.
 - **The app does nothing at launch.** Only the button registers the daemon. Tests are hosted by the app, so this keeps them inert.
 - **App Sandbox stays off.** The daemon is the same binary, and the sandbox would block IOKit, Disk Arbitration and the command-line tools.
